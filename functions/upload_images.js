@@ -91,6 +91,8 @@ export async function onRequest({ request, env }) {
             }
         }
 
+        console.log("Uploaded image URLs:", JSON.stringify(uploadedImageUrls, null, 2));
+
         const fields = {
             User: name || 'Anonymous',
             Timestamp: timestamp
