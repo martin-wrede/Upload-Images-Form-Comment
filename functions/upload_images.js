@@ -22,6 +22,7 @@ export async function onRequest({ request, env }) {
         const email = formData.get('email');
         const uploadColumn = formData.get('uploadColumn') || 'Image_Upload2'; // Default to Image_Upload2
         const prompt = formData.get('prompt') || ''; // Get prompt text
+        const orderPackage = formData.get('orderPackage'); // Get package type
         const files = formData.getAll('images');
 
         const airtableUrl = `https://api.airtable.com/v0/${env.AIRTABLE_BASE_ID}/${env.AIRTABLE_TABLE_NAME}`;
@@ -101,6 +102,10 @@ export async function onRequest({ request, env }) {
 
         if (email) {
             fields.Email = email;
+        }
+
+        if (orderPackage) {
+            fields.Order_Package = orderPackage;
         }
 
         if (prompt) {
