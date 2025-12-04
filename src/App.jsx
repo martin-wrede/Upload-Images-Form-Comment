@@ -68,6 +68,26 @@ function App() {
 
       console.log("✅ Uploaded to Airtable:", result);
       alert("Upload successful!");
+
+      // Send email notification via mailto
+      const packageDisplayName = packageType || 'default';
+      const timestamp = new Date().toISOString();
+      const emailSubject = `New Upload: ${packageDisplayName}`;
+      const emailBody = `New Image Upload Notification
+
+Package Type: ${packageDisplayName}
+User Name: ${name || 'Anonymous'}
+User Email: ${email || 'Not provided'}
+Number of Images: ${files.length}
+Timestamp: ${timestamp}
+${prompt ? `Notes: ${prompt}` : ''}
+
+This is an automated notification from your upload form.`;
+
+      // Create mailto link and open it
+      const mailtoLink = `mailto:info@targetx.de?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+      window.location.href = mailtoLink;
+
     } catch (error) {
       console.error("❌ Error uploading to Airtable:", error);
       alert(error.message || "Upload failed.");

@@ -162,59 +162,6 @@ export async function onRequest({ request, env }) {
             });
         }
 
-        // Send email notification using MailChannels (no DNS setup required)
-        try {
-            const packageDisplayName = orderPackage || 'default';
-            const emailSubject = `New Upload: ${packageDisplayName}`;
-            const emailBody = `
-New Image Upload Notification
-
-Package Type: ${packageDisplayName}
-User Name: ${name || 'Anonymous'}
-User Email: ${email || 'Not provided'}
-Number of Images: ${uploadedImageUrls.length}
-Upload Column: ${uploadColumn}
-Timestamp: ${timestamp}
-${prompt ? `Notes: ${prompt}` : ''}
-Action: ${method === 'PATCH' ? 'Updated existing record' : 'Created new record'}
-            `;
-
-            const emailRes = await fetch('https://api.mailchannels.net/tx/v1/send', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    personalizations: [
-                        {
-                            to: [{ email: 'info@targetx.de', name: 'TargetX Team' }],
-                        },
-                    ],
-                    from: {
-                        email: 'notifications@upload-images.workers.dev',
-                        name: 'Upload Notifications',
-                    },
-                    subject: emailSubject,
-                    content: [
-                        {
-                            type: 'text/plain',
-                            value: emailBody,
-                        },
-                    ],
-                }),
-            });
-
-            if (emailRes.ok) {
-                console.log("✅ Email notification sent successfully");
-            } else {
-                const emailError = await emailRes.text();
-                console.error("❌ Failed to send email notification:", emailError);
-            }
-        } catch (emailError) {
-            console.error("❌ Error sending email notification:", emailError);
-            // Don't fail the upload if email fails
-        }
-
         return new Response(JSON.stringify(data), {
             headers: {
                 "Content-Type": "application/json",
