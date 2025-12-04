@@ -69,25 +69,6 @@ function App() {
       console.log("✅ Uploaded to Airtable:", result);
       alert("Upload successful!");
 
-      // Send email notification via mailto
-      const packageDisplayName = packageType || 'default';
-      const timestamp = new Date().toISOString();
-      const emailSubject = `New Upload: ${packageDisplayName}`;
-      const emailBody = `New Image Upload Notification
-
-Package Type: ${packageDisplayName}
-User Name: ${name || 'Anonymous'}
-User Email: ${email || 'Not provided'}
-Number of Images: ${files.length}
-Timestamp: ${timestamp}
-${prompt ? `Notes: ${prompt}` : ''}
-
-This is an automated notification from your upload form.`;
-
-      // Create mailto link and open it
-      const mailtoLink = `mailto:info@targetx.de?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-      window.location.href = mailtoLink;
-
     } catch (error) {
       console.error("❌ Error uploading to Airtable:", error);
       alert(error.message || "Upload failed.");
@@ -223,57 +204,7 @@ This is an automated notification from your upload form.`;
 
       {/** AI image gneration starts here */}
 
-      {/** 
 
-      <hr style={{ margin: '2rem 0' }} />
-
-      <h1>Generate or Modify Image with AI</h1>
-
-      {files.length > 0 && (
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem' }}>Select an image to create a variation (optional):</label>
-          <select
-            onChange={(e) => setSelectedImageIndex(e.target.value)}
-            value={selectedImageIndex}
-            id="imageSelector"
-            style={{ padding: '0.5rem', width: '300px' }}
-          >
-            <option value="">-- Create new image (No file) --</option>
-            {files.map((file, index) => (
-              <option key={index} value={index}>
-                {file.name}
-              </option>
-            ))}
-          </select>
-          <p style={{ fontSize: '0.8rem', color: '#666' }}>
-            * Selecting an image will ignore the prompt and generate a variation.
-          </p>
-        </div>
-      )}
-
-      <input
-        type="text"
-        placeholder="Enter your prompt (ignored if image selected)"
-        value={prompt}
-        onChange={e => setPrompt(e.target.value)}
-        disabled={selectedImageIndex !== ""}
-        style={{ padding: '0.5rem', width: '300px', backgroundColor: selectedImageIndex !== "" ? '#f0f0f0' : 'white' }}
-      />
-      <button
-        onClick={generateImage}
-        disabled={isLoading}
-        style={{ marginLeft: '1rem', padding: '0.5rem 1rem' }}
-      >
-
-        {isLoading ? 'Processing...' : 'Generate / Variation'}
-      </button>
-
-      {result && (
-        <div style={{ marginTop: '2rem' }}>
-          <img src={result} alt="Generated" style={{ maxWidth: '100%', height: 'auto' }} />
-        </div>
-      )}
- */}
     </div>
   );
 }
