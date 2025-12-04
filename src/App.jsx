@@ -25,7 +25,40 @@ function App() {
 
   const [selectedImageIndex, setSelectedImageIndex] = useState("");
 
-  const handleFileChange = (e) => {
+  // Helper function to correct image orientation
+  const correctImageOrientation = async (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+
+          // Set canvas size to image size
+          canvas.width = img.width;
+          canvas.height = img.height;
+
+          // Draw image with correct orientation
+          ctx.drawImage(img, 0, 0);
+
+          // Convert canvas to blob
+          canvas.toBlob((blob) => {
+            // Create new file with corrected orientation
+            const correctedFile = new File([blob], file.name, {
+              type: file.type,
+              lastModified: Date.now(),
+            });
+            resolve(correctedFile);
+          }, file.type);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileChange = async (e) => {
     const selectedFiles = [...e.target.files];
     if (selectedFiles.length > currentPackage.limit) {
       alert(`You can only upload a maximum of ${currentPackage.limit} images for the ${currentPackage.title}.`);
@@ -33,7 +66,11 @@ function App() {
       e.target.value = '';
       setFiles([]);
     } else {
-      setFiles(selectedFiles);
+      // Correct orientation for all images
+      const correctedFiles = await Promise.all(
+        selectedFiles.map(file => correctImageOrientation(file))
+      );
+      setFiles(correctedFiles);
     }
   };
 
@@ -190,12 +227,20 @@ function App() {
           {isUploading ? 'Uploading...' : 'Upload'}
         </button>
 
-        <input
-          type="text"
+        <textarea
           placeholder="Add notes or information about your images (optional)"
           value={prompt}
           onChange={e => setPrompt(e.target.value)}
-          style={{ padding: '0.5rem', width: '300px', display: 'block', marginTop: '0.5rem' }}
+          style={{
+            padding: '0.5rem',
+            width: '300px',
+            minHeight: '80px',
+            display: 'block',
+            marginTop: '0.5rem',
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '14px',
+            resize: 'vertical'
+          }}
         />
 
 
