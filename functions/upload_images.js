@@ -162,6 +162,51 @@ export async function onRequest({ request, env }) {
             });
         }
 
+        // Send email notification
+        try {
+            if (env.RESEND_API_KEY) {
+                const packageDisplayName = orderPackage || 'default';
+                const emailSubject = `New Upload: ${packageDisplayName}`;
+                const emailBody = `
+                    <h2>New Image Upload Notification</h2>
+                    <p><strong>Package Type:</strong> ${packageDisplayName}</p>
+                    <p><strong>User Name:</strong> ${name || 'Anonymous'}</p>
+                    <p><strong>User Email:</strong> ${email || 'Not provided'}</p>
+                    <p><strong>Number of Images:</strong> ${uploadedImageUrls.length}</p>
+                    <p><strong>Upload Column:</strong> ${uploadColumn}</p>
+                    <p><strong>Timestamp:</strong> ${timestamp}</p>
+                    ${prompt ? `<p><strong>Notes:</strong> ${prompt}</p>` : ''}
+                    <p><strong>Action:</strong> ${method === 'PATCH' ? 'Updated existing record' : 'Created new record'}</p>
+                `;
+
+                const emailRes = await fetch('https://api.resend.com/emails', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        from: 'Upload Notifications <onboarding@resend.dev>',
+                        to: ['info@targetx.de'],
+                        subject: emailSubject,
+                        html: emailBody,
+                    }),
+                });
+
+                if (emailRes.ok) {
+                    console.log("✅ Email notification sent successfully");
+                } else {
+                    const emailError = await emailRes.text();
+                    console.error("❌ Failed to send email notification:", emailError);
+                }
+            } else {
+                console.log("⚠️ RESEND_API_KEY not configured, skipping email notification");
+            }
+        } catch (emailError) {
+            console.error("❌ Error sending email notification:", emailError);
+            // Don't fail the upload if email fails
+        }
+
         return new Response(JSON.stringify(data), {
             headers: {
                 "Content-Type": "application/json",
