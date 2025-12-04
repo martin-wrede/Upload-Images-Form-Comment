@@ -162,45 +162,53 @@ export async function onRequest({ request, env }) {
             });
         }
 
-        // Send email notification
+        // Send email notification using MailChannels (no DNS setup required)
         try {
-            if (env.RESEND_API_KEY) {
-                const packageDisplayName = orderPackage || 'default';
-                const emailSubject = `New Upload: ${packageDisplayName}`;
-                const emailBody = `
-                    <h2>New Image Upload Notification</h2>
-                    <p><strong>Package Type:</strong> ${packageDisplayName}</p>
-                    <p><strong>User Name:</strong> ${name || 'Anonymous'}</p>
-                    <p><strong>User Email:</strong> ${email || 'Not provided'}</p>
-                    <p><strong>Number of Images:</strong> ${uploadedImageUrls.length}</p>
-                    <p><strong>Upload Column:</strong> ${uploadColumn}</p>
-                    <p><strong>Timestamp:</strong> ${timestamp}</p>
-                    ${prompt ? `<p><strong>Notes:</strong> ${prompt}</p>` : ''}
-                    <p><strong>Action:</strong> ${method === 'PATCH' ? 'Updated existing record' : 'Created new record'}</p>
-                `;
+            const packageDisplayName = orderPackage || 'default';
+            const emailSubject = `New Upload: ${packageDisplayName}`;
+            const emailBody = `
+New Image Upload Notification
 
-                const emailRes = await fetch('https://api.resend.com/emails', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${env.RESEND_API_KEY}`,
-                        'Content-Type': 'application/json',
+Package Type: ${packageDisplayName}
+User Name: ${name || 'Anonymous'}
+User Email: ${email || 'Not provided'}
+Number of Images: ${uploadedImageUrls.length}
+Upload Column: ${uploadColumn}
+Timestamp: ${timestamp}
+${prompt ? `Notes: ${prompt}` : ''}
+Action: ${method === 'PATCH' ? 'Updated existing record' : 'Created new record'}
+            `;
+
+            const emailRes = await fetch('https://api.mailchannels.net/tx/v1/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    personalizations: [
+                        {
+                            to: [{ email: 'info@targetx.de', name: 'TargetX Team' }],
+                        },
+                    ],
+                    from: {
+                        email: 'notifications@upload-images.workers.dev',
+                        name: 'Upload Notifications',
                     },
-                    body: JSON.stringify({
-                        from: 'Upload Notifications <onboarding@resend.dev>',
-                        to: ['info@targetx.de'],
-                        subject: emailSubject,
-                        html: emailBody,
-                    }),
-                });
+                    subject: emailSubject,
+                    content: [
+                        {
+                            type: 'text/plain',
+                            value: emailBody,
+                        },
+                    ],
+                }),
+            });
 
-                if (emailRes.ok) {
-                    console.log("✅ Email notification sent successfully");
-                } else {
-                    const emailError = await emailRes.text();
-                    console.error("❌ Failed to send email notification:", emailError);
-                }
+            if (emailRes.ok) {
+                console.log("✅ Email notification sent successfully");
             } else {
-                console.log("⚠️ RESEND_API_KEY not configured, skipping email notification");
+                const emailError = await emailRes.text();
+                console.error("❌ Failed to send email notification:", emailError);
             }
         } catch (emailError) {
             console.error("❌ Error sending email notification:", emailError);
