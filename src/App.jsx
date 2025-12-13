@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
 
+
+import React, { useState } from 'react';
+import FileUploader from './FileUploader';
 
 const PACKAGES = {
   teststarter: { title: 'Test Starter Package', limit: 2, description: 'Please upload 2 test images.', column: 'Image_Upload' },
@@ -17,13 +19,14 @@ function App() {
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  
+  // State for AI generation selection (kept from original code)
+  const [selectedImageIndex, setSelectedImageIndex] = useState("");
 
   // Get package from URL query parameter
   const queryParams = new URLSearchParams(window.location.search);
   const packageType = queryParams.get('package');
   const currentPackage = PACKAGES[packageType] || PACKAGES.default;
-
-  const [selectedImageIndex, setSelectedImageIndex] = useState("");
 
   // Helper function to correct image orientation
   const correctImageOrientation = async (file) => {
@@ -58,23 +61,34 @@ function App() {
     });
   };
 
-  const handleFileChange = async (e) => {
-    const selectedFiles = [...e.target.files];
-    if (selectedFiles.length > currentPackage.limit) {
+  // Handler for the Drag and Drop component
+  const handleFilesSelected = async (incomingFiles) => {
+    if (incomingFiles.length > currentPackage.limit) {
       alert(`You can only upload a maximum of ${currentPackage.limit} images for the ${currentPackage.title}.`);
-      // Reset the input value so the user can try again
-      e.target.value = '';
-      setFiles([]);
+      setFiles([]); // Reset
     } else {
-      // Correct orientation for all images
-      const correctedFiles = await Promise.all(
-        selectedFiles.map(file => correctImageOrientation(file))
-      );
-      setFiles(correctedFiles);
+      setIsLoading(true); // Show loading state while processing
+      try {
+        // Correct orientation for all images
+        const correctedFiles = await Promise.all(
+          incomingFiles.map(file => correctImageOrientation(file))
+        );
+        setFiles(correctedFiles);
+      } catch (error) {
+        console.error("Error processing images:", error);
+        alert("There was an error processing your images.");
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
   const handleUpload = async () => {
+    if (files.length === 0) {
+      alert("Please select files first.");
+      return;
+    }
+
     setIsUploading(true);
     try {
       const formData = new FormData();
@@ -105,6 +119,10 @@ function App() {
 
       console.log("✅ Uploaded to Airtable:", result);
       alert("Upload successful!");
+      
+      // Clear form on success
+      setFiles([]);
+      setPrompt('');
 
     } catch (error) {
       console.error("❌ Error uploading to Airtable:", error);
@@ -124,7 +142,7 @@ function App() {
 
       if (selectedFile) {
         const formData = new FormData();
-        formData.append('prompt', prompt); // Sent but ignored by backend for variations
+        formData.append('prompt', prompt); 
         formData.append('image', selectedFile);
         formData.append('user', 'User123');
         body = formData;
@@ -194,62 +212,99 @@ function App() {
   };
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'Arial' }}>
+    <div style={{ padding: '2rem', fontFamily: 'Arial', maxWidth: '600px', margin: '0 auto' }}>
       <h1>{currentPackage.title}</h1>
       <p>{currentPackage.description}</p>
 
-      <div style={{ marginBottom: '2rem', border: '1px solid #ccc', padding: '1rem' }}>
-        <input
-          type="text"
-          placeholder="Your Name"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          style={{ padding: '0.5rem', width: '300px', display: 'block', marginBottom: '0.5rem' }}
-        />
-        <input
-          type="email"
-          placeholder="Your Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          style={{ padding: '0.5rem', width: '300px', display: 'block', marginBottom: '0.5rem' }}
-        />
-        <input
-          type="file"
-          multiple
-          onChange={handleFileChange}
-          style={{ padding: '0.5rem', display: 'block', marginBottom: '0.5rem' }}
-        />
+      <div style={{ marginBottom: '2rem', border: '1px solid #ccc', padding: '1rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+        
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Name</label>
+          <input
+            type="text"
+            placeholder="Your Name"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            style={{ padding: '0.75rem', width: '100%', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc' }}
+          />
+        </div>
+
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Email</label>
+          <input
+            type="email"
+            placeholder="Your Email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            style={{ padding: '0.75rem', width: '100%', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc' }}
+          />
+        </div>
+
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Upload Images</label>
+          {/* Drag and Drop Component */}
+          <FileUploader 
+            onFilesSelected={handleFilesSelected}
+            maxFiles={currentPackage.limit}
+            disabled={isUploading || isLoading}
+            description={`Supported formats: JPG, PNG. Limit: ${currentPackage.limit}`}
+          />
+
+          {/* Selected Files List Preview */}
+          {files.length > 0 && (
+            <div style={{ marginTop: '0.5rem', backgroundColor: '#f9f9f9', padding: '0.5rem', borderRadius: '4px', border: '1px solid #eee' }}>
+              <strong style={{ fontSize: '0.9rem', color: '#333' }}>Selected ({files.length}):</strong>
+              <ul style={{ margin: '5px 0', paddingLeft: '20px', color: '#555' }}>
+                {files.map((file, index) => (
+                  <li key={index} style={{ fontSize: '0.85rem' }}>
+                    {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Notes (Optional)</label>
+          <textarea
+            placeholder="Add notes or information about your images..."
+            value={prompt}
+            onChange={e => setPrompt(e.target.value)}
+            style={{
+              padding: '0.75rem',
+              width: '100%',
+              minHeight: '80px',
+              display: 'block',
+              fontFamily: 'Arial, sans-serif',
+              fontSize: '14px',
+              resize: 'vertical',
+              boxSizing: 'border-box',
+              borderRadius: '4px',
+              border: '1px solid #ccc'
+            }}
+          />
+        </div>
+
         <button
           onClick={handleUpload}
-          disabled={isUploading}
-          style={{ padding: '0.5rem 1rem', marginTop: '0.5rem' }}
+          disabled={isUploading || isLoading || files.length === 0}
+          style={{ 
+            padding: '0.75rem 1rem', 
+            width: '100%',
+            backgroundColor: (isUploading || isLoading || files.length === 0) ? '#cccccc' : '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: (isUploading || isLoading || files.length === 0) ? 'not-allowed' : 'pointer',
+            fontWeight: 'bold',
+            fontSize: '1rem'
+          }}
         >
-          {isUploading ? 'Uploading...' : 'Upload'}
+          {isUploading ? 'Uploading...' : 'Upload Package'}
         </button>
 
-        <textarea
-          placeholder="Add notes or information about your images (optional)"
-          value={prompt}
-          onChange={e => setPrompt(e.target.value)}
-          style={{
-            padding: '0.5rem',
-            width: '300px',
-            minHeight: '80px',
-            display: 'block',
-            marginTop: '0.5rem',
-            fontFamily: 'Arial, sans-serif',
-            fontSize: '14px',
-            resize: 'vertical'
-          }}
-        />
-
-
-
       </div>
-
-      {/** AI image gneration starts here */}
-
-
     </div>
   );
 }
