@@ -6,8 +6,8 @@ import FileUploader from './FileUploader';
 const PACKAGES = {
   teststarter: { title: 'Test Starter Package', limit: 2, description: 'Please upload 2 test images.', column: 'Image_Upload' },
   teststandard: { title: 'Test Standard Package', limit: 2, description: 'Please upload 2 test images.', column: 'Image_Upload' },
-  starter: { title: 'Starter Package', limit: 3, description: 'Please upload 3 images.', column: 'Image_Upload2' },
-  standard: { title: 'Standard Package', limit: 8, description: 'Please upload 8 images.', column: 'Image_Upload2' },
+  starter: { title: 'Starter Package', limit: 5, description: 'Please upload 3 images.', column: 'Image_Upload2' },
+  standard: { title: 'Standard Package', limit: 10, description: 'Please upload 8 images.', column: 'Image_Upload2' },
   default: { title: 'Image Upload', limit: 10, description: 'Please upload your images.', column: 'Image_Upload2' }
 };
 
